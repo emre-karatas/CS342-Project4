@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#define PAGESIZE 4096
+#define KPAGECOUNT_PATH "/proc/kpagecount"
+#define KPAGEFLAGS_PATH "/proc/kpageflags"
 
 // Function prototypes
 void freefc(char* pfn1, char* pfn2);
@@ -13,6 +20,100 @@ void mapall(char* pid);
 void mapallin(char* pid);
 void alltablesize(char* pid);
 
+uint64_t is_free_frame(uint64_t pfn) 
+{
+    FILE* kpagecount_file = fopen(KPAGECOUNT_PATH, "rb");
+    FILE* kpageflags_file = fopen(KPAGEFLAGS_PATH, "rb");
+
+    if (!kpagecount_file || !kpageflags_file) 
+    {
+        printf("Could not open one of the proc files\n");
+        return 0;
+    }
+
+    uint64_t pagecount;
+    uint64_t pageflags;
+
+    lseek(kpagecount_file, pfn * sizeof(uint64_t), SEEK_SET);
+    fread(&pagecount, sizeof(uint64_t), 1, kpagecount_file);
+
+    lseek(kpageflags_file, pfn * sizeof(uint64_t), SEEK_SET);
+    fread(&pageflags, sizeof(uint64_t), 1, kpageflags_file);
+
+    fclose(kpagecount_file);
+    fclose(kpageflags_file);
+
+    return pagecount == 0 || (pageflags & (1ULL << 60)) != 0;  // NOPAGE flag is assumed to be the 60th bit
+}
+
+void freefc(char* pfn1, char* pfn2) 
+{
+    uint64_t start = strtoull(pfn1, NULL, 16);
+    uint64_t end = strtoull(pfn2, NULL, 16);
+
+    uint64_t freeFrames = 0;
+
+    for (uint64_t pfn = start; pfn < end; ++pfn) {
+        if (is_free_frame(pfn)) {
+            ++freeFrames;
+        }
+    }
+
+    printf("Number of free frames: %llu\n", freeFrames);
+}
+
+uint64_t get_frame_flags(uint64_t pfn) 
+{
+    int kpageflags_fd = open(KPAGEFLAGS_PATH, O_RDONLY);
+    if (kpageflags_fd == -1) 
+    {
+        printf("Could not open kpageflags file\n");
+        return 0;
+    }
+
+    uint64_t pageflags;
+
+    lseek(kpageflags_fd, pfn * sizeof(uint64_t), SEEK_SET);
+    read(kpageflags_fd, &pageflags, sizeof(uint64_t));
+
+    close(kpageflags_fd);
+
+    return pageflags;
+}
+
+uint64_t get_mapping_count(uint64_t pfn) 
+{
+    int kpagecount_fd = open(KPAGECOUNT_PATH, O_RDONLY);
+    if (kpagecount_fd == -1) 
+    {
+        printf("Could not open kpagecount file\n");
+        return 0;
+    }
+
+    uint64_t pagecount;
+
+    lseek(kpagecount_fd, pfn * sizeof(uint64_t), SEEK_SET);
+    read(kpagecount_fd, &pagecount, sizeof(uint64_t));
+
+    close(kpagecount_fd);
+
+    return pagecount;
+}
+
+void frameinfo(char* pfn_str) 
+{
+    uint64_t pfn = strtoull(pfn_str, NULL, 16);
+
+    uint64_t pageflags = get_frame_flags(pfn);
+    uint64_t pagecount = get_mapping_count(pfn);
+
+    printf("Information for frame %llu:\n", pfn);
+    printf("Mapping count: %llu\n", pagecount);
+    printf("Flags: %llu\n", pageflags);
+}
+
+
+
 void memused(char* pid) 
 {
     // The path to the process's memory map in the /proc filesystem.
@@ -21,7 +122,8 @@ void memused(char* pid)
 
     // Open the memory map.
     FILE* file = fopen(path, "r");
-    if (!file) {
+    if (!file) 
+    {
         printf("Could not open %s\n", path);
         return;
     }
@@ -30,9 +132,11 @@ void memused(char* pid)
 
     // Read each line of the memory map.
     char line[256];
-    while (fgets(line, sizeof(line), file)) {
+    while (fgets(line, sizeof(line), file)) 
+    {
         unsigned long long start, end;
-        if (sscanf(line, "%llx-%llx", &start, &end) == 2) {
+        if (sscanf(line, "%llx-%llx", &start, &end) == 2) 
+        {
             totalSize += end - start;
         }
     }
