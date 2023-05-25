@@ -4,12 +4,14 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdbool.h>
 
-#define PAGESIZE 4096
 #define KPAGECOUNT_PATH "/proc/kpagecount"
 #define KPAGEFLAGS_PATH "/proc/kpageflags"
-#define MAPS_PATH "proc/pid/maps"
-#define PAGEMAP_PATH "proc/pid/pagemap"
+
+#define PAGEMAP_LENGTH 8
+#define PAGESIZE 4096
+#define PAGEMAP_ENTRY_SIZE 8
 
 
 // Function prototypes
@@ -22,32 +24,11 @@ void mapall(char* pid);
 void mapallin(char* pid);
 void alltablesize(char* pid);
 
-uint64_t is_free_frame(uint64_t pfn) 
+
+uint64_t get_entry_frame(uint64_t entry) 
 {
-    FILE* kpagecount_file = fopen(KPAGECOUNT_PATH, "rb");
-    FILE* kpageflags_file = fopen(KPAGEFLAGS_PATH, "rb");
-
-    if (!kpagecount_file || !kpageflags_file) 
-    {
-        printf("Could not open one of the proc files\n");
-        return 0;
-    }
-
-    uint64_t pagecount;
-    uint64_t pageflags;
-
-    lseek(kpagecount_file, pfn * sizeof(uint64_t), SEEK_SET);
-    fread(&pagecount, sizeof(uint64_t), 1, kpagecount_file);
-
-    lseek(kpageflags_file, pfn * sizeof(uint64_t), SEEK_SET);
-    fread(&pageflags, sizeof(uint64_t), 1, kpageflags_file);
-
-    fclose(kpagecount_file);
-    fclose(kpageflags_file);
-
-    return pagecount == 0 || (pageflags & (1ULL << 60)) != 0;  // NOPAGE flag is assumed to be the 60th bit
+    return entry & 0x7FFFFFFFFFFFFF;
 }
-
 
 uint64_t get_frame_flags(uint64_t pfn) 
 {
@@ -101,41 +82,185 @@ void frameinfo(char* pfn_str)
 
 
 
-void memused(char* pid) 
+void memused(int pid) 
 {
-    // The path to the process's memory map in the /proc filesystem.
-    char path[256];
-    sprintf(path, "/proc/%s/maps", pid);
+    char pagemap_file[64];
+    char maps_file[64];
+    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
+    sprintf(maps_file, "/proc/%d/maps", pid);
 
-    // Open the memory map.
-    FILE* file = fopen(path, "r");
-    if (!file) 
-    {
-        printf("Could not open %s\n", path);
+    FILE* maps = fopen(maps_file, "r");
+    if (maps == NULL) {
+        printf("Failed to open maps file\n");
         return;
     }
 
-    unsigned long long totalSize = 0;
-
-    // Read each line of the memory map.
     char line[256];
-    while (fgets(line, sizeof(line), file)) 
+    uint64_t total_virt = 0, total_phys_excl = 0, total_phys = 0;
+
+    while (fgets(line, sizeof(line), maps)) 
     {
-        unsigned long long start, end;
-        if (sscanf(line, "%llx-%llx", &start, &end) == 2) 
+        uint64_t virt_start, virt_end;
+        sscanf(line, "%lx-%lx", &virt_start, &virt_end);
+
+        uint64_t virt_size = virt_end - virt_start;
+        total_virt += virt_size;
+
+        int pagemap = open(pagemap_file, O_RDONLY);
+        if (pagemap < 0) 
         {
-            totalSize += end - start;
+            printf("Failed to open pagemap file\n");
+            fclose(maps);
+            return;
+        }
+
+        uint64_t num_pages = virt_size / PAGESIZE;
+        for (uint64_t i = 0; i < num_pages; i++) 
+        {
+            uint64_t virt_addr = virt_start + i * PAGESIZE;
+            uint64_t offset = virt_addr / PAGESIZE * PAGEMAP_ENTRY_SIZE;
+
+            uint64_t entry;
+            lseek(pagemap, offset, SEEK_SET);
+            if (read(pagemap, &entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) 
+            {
+                printf("Failed to read pagemap entry\n");
+                close(pagemap);
+                fclose(maps);
+                return;
+            }
+
+            if (entry & (1ULL << 63)) 
+            { // page is present in memory
+                total_phys++;
+                if (entry & (1ULL << 62)) 
+                { // page is exclusive
+                    total_phys_excl++;
+                }
+            }
+        }
+
+        close(pagemap);
+    }
+
+    fclose(maps);
+
+    printf("Total virtual memory used: %llu KB\n", total_virt / 1024);
+    printf("Total physical memory used (exclusive): %llu KB\n", total_phys_excl * PAGESIZE / 1024);
+    printf("Total physical memory used (shared + exclusive): %llu KB\n", total_phys * PAGESIZE / 1024);
+
+}
+
+void pte(int pid, uint64_t va) 
+{
+    char pagemap_file[64];
+    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
+
+    int pagemap = open(pagemap_file, O_RDONLY);
+    if (pagemap < 0) 
+    {
+        printf("Failed to open pagemap file\n");
+        return;
+    }
+
+    uint64_t virt_page_num = va / PAGESIZE;
+
+    uint64_t pagemap_entry;
+    lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
+    if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) 
+    {
+        printf("Failed to read pagemap entry\n");
+        close(pagemap);
+        return;
+    }
+
+    close(pagemap);
+
+    printf("Pagemap entry for VA 0x%llx:\n", va);
+    printf("Page frame number: 0x%llx\n", get_entry_frame(pagemap_entry));
+    printf("Present: %d\n", (pagemap_entry & (1ULL << 63)) != 0);
+    printf("Swapped: %d\n", (pagemap_entry & (1ULL << 62)) != 0);
+    printf("File-page or shared-anon: %d\n", (pagemap_entry & (1ULL << 61)) != 0);
+    printf("Page exclusively mapped: %d\n", (pagemap_entry & (1ULL << 56)) != 0);
+    printf("Soft-dirty: %d\n", (pagemap_entry & (1ULL << 55)) != 0);
+
+    if (pagemap_entry & (1ULL << 62)) 
+    {   // page is swapped
+        uint64_t swap_offset = (pagemap_entry >> 5) & 0x3FFFFFFFFFF;
+        uint64_t swap_type = pagemap_entry & 0x1F;
+        printf("Swap offset: 0x%llx\n", swap_offset);
+        printf("Swap type: 0x%llx\n", swap_type);
+    }
+}
+
+bool is_va_used(uint64_t va, char *maps_file) 
+{
+    FILE *maps = fopen(maps_file, "r");
+    if (maps == NULL) 
+    {
+        printf("Failed to open maps file\n");
+        return false;
+    }
+
+    uint64_t start, end;
+    while (fscanf(maps, "%llx-%llx", &start, &end) != EOF) 
+    {
+        if (va >= start && va < end) 
+        {
+            fclose(maps);
+            return true;
         }
     }
 
-    fclose(file);
-
-    // Convert the size from bytes to kilobytes.
-    totalSize /= 1024;
-    printf("Total virtual memory used by process %s: %llu KB\n", pid, totalSize);
-
-    // TODO: Calculate the physical memory used by the process.
+    fclose(maps);
+    return false;
 }
+
+void maprange(int pid, uint64_t va1, uint64_t va2) 
+{
+    char pagemap_file[64];
+    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
+
+    int pagemap = open(pagemap_file, O_RDONLY);
+    if (pagemap < 0) 
+    {
+        printf("Failed to open pagemap file\n");
+        return;
+    }
+
+    char maps_file[64];
+    sprintf(maps_file, "/proc/%d/maps", pid);
+
+    for (uint64_t va = va1; va < va2; va += PAGESIZE) 
+    {
+        if (!is_va_used(va, maps_file)) 
+        {
+            printf("VA 0x%llx: unused\n", va);
+            continue;
+        }
+
+        uint64_t pagemap_entry;
+        uint64_t virt_page_num = va / PAGESIZE;
+        lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
+        if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) 
+        {
+            printf("Failed to read pagemap entry for VA 0x%llx\n", va);
+            continue;
+        }
+
+        if ((pagemap_entry & (1ULL << 63)) == 0) 
+        {
+            printf("VA 0x%llx: not-in-memory\n", va);
+        } 
+        else 
+        {
+            printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
+        }
+    }
+
+    close(pagemap);
+}
+
 
 
 int main(int argc, char* argv[]) 
