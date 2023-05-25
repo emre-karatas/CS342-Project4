@@ -8,9 +8,11 @@
 #define PAGESIZE 4096
 #define KPAGECOUNT_PATH "/proc/kpagecount"
 #define KPAGEFLAGS_PATH "/proc/kpageflags"
+#define MAPS_PATH "proc/pid/maps"
+#define PAGEMAP_PATH "proc/pid/pagemap"
+
 
 // Function prototypes
-void freefc(char* pfn1, char* pfn2);
 void frameinfo(char* pfn);
 void memused(char* pid);
 void mapva(char* pid, char* va);
@@ -46,21 +48,6 @@ uint64_t is_free_frame(uint64_t pfn)
     return pagecount == 0 || (pageflags & (1ULL << 60)) != 0;  // NOPAGE flag is assumed to be the 60th bit
 }
 
-void freefc(char* pfn1, char* pfn2) 
-{
-    uint64_t start = strtoull(pfn1, NULL, 16);
-    uint64_t end = strtoull(pfn2, NULL, 16);
-
-    uint64_t freeFrames = 0;
-
-    for (uint64_t pfn = start; pfn < end; ++pfn) {
-        if (is_free_frame(pfn)) {
-            ++freeFrames;
-        }
-    }
-
-    printf("Number of free frames: %llu\n", freeFrames);
-}
 
 uint64_t get_frame_flags(uint64_t pfn) 
 {
@@ -160,11 +147,7 @@ int main(int argc, char* argv[])
     }
 
     char* command = argv[1];
-    if (strcmp(command, "-freefc") == 0) 
-    {
-        freefc(argv[2], argv[3]);
-    } 
-    else if (strcmp(command, "-frameinfo") == 0) 
+    if (strcmp(command, "-frameinfo") == 0) 
     {
         frameinfo(argv[2]);
     } 
