@@ -16,10 +16,10 @@
 
 // Function prototypes
 void frameinfo(char* pfn);
-void memused(char* pid);
-void mapva(char* pid, char* va);
-void pte(char* pid, char* va);
-void maprange(char* pid, char* va1, char* va2);
+void memused(char* pid);                        //Prototype and declaration are different
+void mapva(char* pid, char* va);    
+void pte(char* pid, char* va);                  //Prototype and declaration are different
+void maprange(char* pid, char* va1, char* va2); //Prototype and declaration are different
 void mapall(char* pid);
 void mapallin(char* pid);
 void alltablesize(char* pid);
