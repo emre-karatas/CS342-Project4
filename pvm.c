@@ -55,7 +55,7 @@ uint64_t get_mapping_count(uint64_t pfn)
     if (kpagecount_fd == -1) 
     {
         printf("Could not open kpagecount file\n");
-        return 0;
+        return 0;strtoull
     }
 
     uint64_t pagecount;
@@ -285,7 +285,7 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-pte")) 
     {
-        pte(atoi(argv[2]), argv[3]);
+        pte(atoi(argv[2]), strtoull(argv[3], NULL, 10));
     } 
     else if (!strcmp(command, "-maprange")) 
     {
