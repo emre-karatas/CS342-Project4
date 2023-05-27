@@ -15,11 +15,12 @@
 
 
 // Function prototypes
+void freefc(uint64_t pnf1, uint64_t pnf2);
 void frameinfo(char* pfn);
-void memused(int pid);                        //Prototype and declaration are different
+void memused(int pid);
 void mapva(char* pid, char* va);    
-void pte(int pid, uint64_t va);                  //Prototype and declaration are different
-void maprange(int pid, uint64_t va1, uint64_t va2); //Prototype and declaration are different
+void pte(int pid, uint64_t va);
+void maprange(int pid, uint64_t va1, uint64_t va2);
 void mapall(char* pid);
 void mapallin(char* pid);
 void alltablesize(char* pid);
@@ -55,7 +56,7 @@ uint64_t get_mapping_count(uint64_t pfn)
     if (kpagecount_fd == -1) 
     {
         printf("Could not open kpagecount file\n");
-        return 0;strtoull
+        return 0;
     }
 
     uint64_t pagecount;
@@ -67,7 +68,9 @@ uint64_t get_mapping_count(uint64_t pfn)
 
     return pagecount;
 }
+void freefc(uint64_t pnf1, uint64_t pnf2) {
 
+}
 void frameinfo(char* pfn_str) 
 {
     uint64_t pfn = strtoull(pfn_str, NULL, 16);
@@ -251,7 +254,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
         {
             printf("VA 0x%llx: not-in-memory\n", va);
         } 
-        else 
+        else freefc(strtoull(argv[2], NULL, 10), trtoull(argv[2], NULL, 10));
         {
             printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
         }
@@ -271,7 +274,11 @@ int main(int argc, char* argv[])
     }
 
     char* command = argv[1];
-    if (!strcmp(command, "-frameinfo")) 
+    if (!strcmp(command, "-freefc"))
+    {
+        freefc(strtoull(argv[2], NULL, 10), strtoull(argv[2], NULL, 10));
+    }
+    else if (!strcmp(command, "-frameinfo")) 
     {
         frameinfo(argv[2]);
     } 
