@@ -16,10 +16,10 @@
 
 // Function prototypes
 void frameinfo(char* pfn);
-void memused(char* pid);                        //Prototype and declaration are different
+void memused(int pid);                        //Prototype and declaration are different
 void mapva(char* pid, char* va);    
-void pte(char* pid, char* va);                  //Prototype and declaration are different
-void maprange(char* pid, char* va1, char* va2); //Prototype and declaration are different
+void pte(int pid, uint64_t va);                  //Prototype and declaration are different
+void maprange(int pid, uint64_t va1, uint64_t va2); //Prototype and declaration are different
 void mapall(char* pid);
 void mapallin(char* pid);
 void alltablesize(char* pid);
@@ -86,7 +86,7 @@ void memused(int pid)
 {
     char pagemap_file[64];
     char maps_file[64];
-    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
+    sprintf(pagemap_file, "/proc/%dint pid, uint64_t va1, uint64_t va2/pagemap", pid);
     sprintf(maps_file, "/proc/%d/maps", pid);
 
     FILE* maps = fopen(maps_file, "r");
@@ -129,7 +129,6 @@ void memused(int pid)
                 fclose(maps);
                 return;
             }
-
             if (entry & (1ULL << 63)) 
             { // page is present in memory
                 total_phys++;
@@ -244,7 +243,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
         lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
         if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) 
         {
-            printf("Failed to read pagemap entry for VA 0x%llx\n", va);
+            printf("Failed to read pagemap entry for VA 0x%llx\n", char* pid, char* vava);  //TO BE FIXED!!!!!!!!!
             continue;
         }
 
@@ -272,35 +271,35 @@ int main(int argc, char* argv[])
     }
 
     char* command = argv[1];
-    if (strcmp(command, "-frameinfo") == 0) 
+    if (!strcmp(command, "-frameinfo")) 
     {
         frameinfo(argv[2]);
     } 
-    else if (strcmp(command, "-memused") == 0) 
+    else if (!strcmp(command, "-memused")) 
     {
-        memused(argv[2]);
+        memused(atoi(argv[2]));
     } 
-    else if (strcmp(command, "-mapva") == 0) 
+    else if (!strcmp(command, "-mapva")) 
     {
         mapva(argv[2], argv[3]);
     } 
-    else if (strcmp(command, "-pte") == 0) 
+    else if (!strcmp(command, "-pte")) 
     {
-        pte(argv[2], argv[3]);
+        pte(atoi(argv[2]), argv[3]);
     } 
-    else if (strcmp(command, "-maprange") == 0) 
+    else if (!strcmp(command, "-maprange")) 
     {
-        maprange(argv[2], argv[3], argv[4]);
+        maprange(argv[2], strtoull(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
     } 
-    else if (strcmp(command, "-mapall") == 0) 
+    else if (!strcmp(command, "-mapall")) 
     {
         mapall(argv[2]);
     } 
-    else if (strcmp(command, "-mapallin") == 0) 
+    else if (!strcmp(command, "-mapallin")) 
     {
         mapallin(argv[2]);
     } 
-    else if (strcmp(command, "-alltablesize") == 0) 
+    else if (!strcmp(command, "-alltablesize")) 
     {
         alltablesize(argv[2]);
     } 
