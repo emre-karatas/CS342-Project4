@@ -20,8 +20,8 @@ void memused(int pid);
 void mapva(char* pid, char* va);    
 void pte(int pid, uint64_t va);
 void maprange(int pid, uint64_t va1, uint64_t va2);
-void mapall(char* pid);
-void mapallin(char* pid);
+void mapall(int pid);
+void mapallin(int pid);
 void alltablesize(char* pid);
 
 
@@ -260,6 +260,99 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
     close(pagemap);
 }
 
+void mapall(int pid) {
+    char pagemap_file[64];
+    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
+
+    int pagemap = open(pagemap_file, O_RDONLY);
+    if (pagemap < 0) {
+        printf("Failed to open pagemap file\n");
+        return;
+    }
+
+    char maps_file[64];
+    sprintf(maps_file, "/proc/%d/maps", pid);
+
+    FILE* maps_fp = fopen(maps_file, "r");
+    if (maps_fp == NULL) {
+        printf("Failed to open maps file\n");
+        close(pagemap);
+        return;
+    }
+
+    char line[256];
+    while (fgets(line, sizeof(line), maps_fp) != NULL) {
+        uint64_t va_start, va_end;
+        if (sscanf(line, "%lx-%lx", &va_start, &va_end) != 2) {
+            continue;
+        }
+
+        for (uint64_t va = va_start; va < va_end; va += PAGESIZE) {
+            uint64_t pagemap_entry;
+            uint64_t virt_page_num = va / PAGESIZE;
+            lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
+            if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) {
+                printf("Failed to read pagemap entry for VA 0x%llx\n", va);
+                continue;
+            }
+
+            if ((pagemap_entry & (1ULL << 63)) == 0) {
+                printf("VA 0x%llx: not-in-memory\n", va);
+            } else {
+                printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
+            }
+        }
+    }
+
+    fclose(maps_fp);
+    close(pagemap);
+}
+
+void mapallin(int pid) {
+    char pagemap_file[64];
+    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
+
+    int pagemap = open(pagemap_file, O_RDONLY);
+    if (pagemap < 0) {
+        printf("Failed to open pagemap file\n");
+        return;
+    }
+
+    char maps_file[64];
+    sprintf(maps_file, "/proc/%d/maps", pid);
+
+    FILE* maps_fp = fopen(maps_file, "r");
+    if (maps_fp == NULL) {
+        printf("Failed to open maps file\n");
+        close(pagemap);
+        return;
+    }
+
+    char line[256];
+    while (fgets(line, sizeof(line), maps_fp) != NULL) {
+        uint64_t va_start, va_end;
+        if (sscanf(line, "%lx-%lx", &va_start, &va_end) != 2) {
+            continue;
+        }
+
+        for (uint64_t va = va_start; va < va_end; va += PAGESIZE) {
+            uint64_t pagemap_entry;
+            uint64_t virt_page_num = va / PAGESIZE;
+            lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
+            if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) {
+                printf("Failed to read pagemap entry for VA 0x%llx\n", va);
+                continue;
+            }
+
+            if ((pagemap_entry & (1ULL << 63)) != 0) {
+                printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
+            }
+        }
+    }
+
+    fclose(maps_fp);
+    close(pagemap);
+}
 
 
 int main(int argc, char* argv[]) 
@@ -311,4 +404,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
