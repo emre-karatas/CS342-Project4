@@ -75,9 +75,9 @@ void frameinfo(char* pfn_str)
     uint64_t pageflags = get_frame_flags(pfn);
     uint64_t pagecount = get_mapping_count(pfn);
 
-    printf("Information for frame %llu:\n", pfn);
-    printf("Mapping count: %llu\n", pagecount);
-    printf("Flags: %llu\n", pageflags);
+    printf("Information for frame %lu:\n", pfn);
+    printf("Mapping count: %lu\n", pagecount);
+    printf("Flags: %lu\n", pageflags);
 }
 
 
@@ -144,9 +144,9 @@ void memused(int pid)
 
     fclose(maps);
 
-    printf("Total virtual memory used: %llu KB\n", total_virt / 1024);
-    printf("Total physical memory used (exclusive): %llu KB\n", total_phys_excl * PAGESIZE / 1024);
-    printf("Total physical memory used (shared + exclusive): %llu KB\n", total_phys * PAGESIZE / 1024);
+    printf("Total virtual memory used: %lu KB\n", total_virt / 1024);
+    printf("Total physical memory used (exclusive): %lu KB\n", total_phys_excl * PAGESIZE / 1024);
+    printf("Total physical memory used (shared + exclusive): %lu KB\n", total_phys * PAGESIZE / 1024);
 
 }
 
@@ -180,8 +180,8 @@ void pte(int pid, uint64_t va)
 
     close(pagemap);
 
-    printf("Pagemap entry for VA 0x%llx:\n", va);
-    printf("Page frame number: 0x%llx\n", get_entry_frame(pagemap_entry));
+    printf("Pagemap entry for VA 0x%lx:\n", va);
+    printf("Page frame number: 0x%lx\n", get_entry_frame(pagemap_entry));
     printf("Present: %d\n", (pagemap_entry & (1ULL << 63)) != 0);
     printf("Swapped: %d\n", (pagemap_entry & (1ULL << 62)) != 0);
     printf("File-page or shared-anon: %d\n", (pagemap_entry & (1ULL << 61)) != 0);
@@ -192,8 +192,8 @@ void pte(int pid, uint64_t va)
     {   // page is swapped
         uint64_t swap_offset = (pagemap_entry >> 5) & 0x3FFFFFFFFFF;
         uint64_t swap_type = pagemap_entry & 0x1F;
-        printf("Swap offset: 0x%llx\n", swap_offset);
-        printf("Swap type: 0x%llx\n", swap_type);
+        printf("Swap offset: 0x%lx\n", swap_offset);
+        printf("Swap type: 0x%lx\n", swap_type);
     }
 }
 
@@ -207,7 +207,7 @@ bool is_va_used(uint64_t va, char *maps_file)
     }
 
     uint64_t start, end;
-    while (fscanf(maps, "%llx-%llx", &start, &end) != EOF) 
+    while (fscanf(maps, "%lx-%lx", &start, &end) != EOF) 
     {
         if (va >= start && va < end) 
         {
@@ -239,7 +239,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
     {
         if (!is_va_used(va, maps_file)) 
         {
-            printf("VA 0x%llx: unused\n", va);
+            printf("VA 0x%lx: unused\n", va);
             continue;
         }
 
@@ -254,11 +254,11 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
 
         if ((pagemap_entry & (1ULL << 63)) == 0) 
         {
-            printf("VA 0x%llx: not-in-memory\n", va);
+            printf("VA 0x%lx: not-in-memory\n", va);
         } 
         else
         {
-            printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
+            printf("VA 0x%lx: Frame 0x%lx\n", va, get_entry_frame(pagemap_entry));
         }
     }
 
@@ -297,14 +297,14 @@ void mapall(int pid) {
             uint64_t virt_page_num = va / PAGESIZE;
             lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
             if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) {
-                printf("Failed to read pagemap entry for VA 0x%llx\n", va);
+                printf("Failed to read pagemap entry for VA 0x%lx\n", va);
                 continue;
             }
 
             if ((pagemap_entry & (1ULL << 63)) == 0) {
-                printf("VA 0x%llx: not-in-memory\n", va);
+                printf("VA 0x%lx: not-in-memory\n", va);
             } else {
-                printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
+                printf("VA 0x%lx: Frame 0x%lx\n", va, get_entry_frame(pagemap_entry));
             }
         }
     }
@@ -345,12 +345,12 @@ void mapallin(int pid) {
             uint64_t virt_page_num = va / PAGESIZE;
             lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
             if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) {
-                printf("Failed to read pagemap entry for VA 0x%llx\n", va);
+                printf("Failed to read pagemap entry for VA 0x%lx\n", va);
                 continue;
             }
 
             if ((pagemap_entry & (1ULL << 63)) != 0) {
-                printf("VA 0x%llx: Frame 0x%llx\n", va, get_entry_frame(pagemap_entry));
+                printf("VA 0x%lx: Frame 0x%lx\n", va, get_entry_frame(pagemap_entry));
             }
         }
     }
@@ -361,7 +361,7 @@ void mapallin(int pid) {
 
 void alltablesize(int pid)
 {
-    
+
 }
 
 int main(int argc, char* argv[]) 
