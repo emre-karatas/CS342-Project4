@@ -17,7 +17,7 @@
 // Function prototypes
 void frameinfo(char* pfn);
 void memused(int pid);
-void mapva(char* pid, char* va);    
+void mapva(int pid, char* va);    
 void pte(int pid, uint64_t va);
 void maprange(int pid, uint64_t va1, uint64_t va2);
 void mapall(int pid);
@@ -150,6 +150,11 @@ void memused(int pid)
 
 }
 
+void mapva(int pid, char* va)
+{
+
+}
+
 void pte(int pid, uint64_t va) 
 {
     char pagemap_file[64];
@@ -243,7 +248,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
         lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
         if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) 
         {
-            printf("Failed to read pagemap entry for VA 0x%llx\n", char* pid, char* vava);  //TO BE FIXED!!!!!!!!!
+            //printf("Failed to read pagemap entry for VA 0x%llx\n", char* pid, char* vava);  //TO BE FIXED!!!!!!!!!
             continue;
         }
 
@@ -374,7 +379,7 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-mapva")) 
     {
-        mapva(argv[2], argv[3]);
+        mapva(atoi(argv[2]), argv[3]);
     } 
     else if (!strcmp(command, "-pte")) 
     {
