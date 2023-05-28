@@ -22,7 +22,7 @@ void pte(int pid, uint64_t va);
 void maprange(int pid, uint64_t va1, uint64_t va2);
 void mapall(int pid);
 void mapallin(int pid);
-void alltablesize(char* pid);
+void alltablesize(int pid);
 
 
 uint64_t get_entry_frame(uint64_t entry) 
@@ -359,6 +359,10 @@ void mapallin(int pid) {
     close(pagemap);
 }
 
+void alltablesize(int pid)
+{
+    
+}
 
 int main(int argc, char* argv[]) 
 {
