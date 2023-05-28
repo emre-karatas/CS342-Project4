@@ -391,19 +391,19 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-maprange")) 
     {
-        maprange(argv[2], strtoull(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
+        maprange(atoi(argv[2]), strtoull(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
     } 
     else if (!strcmp(command, "-mapall")) 
     {
-        mapall(argv[2]);
+        mapall(atoi(argv[2]));
     } 
     else if (!strcmp(command, "-mapallin")) 
     {
-        mapallin(argv[2]);
+        mapallin(atoi(argv[2]));
     } 
     else if (!strcmp(command, "-alltablesize")) 
     {
-        alltablesize(argv[2]);
+        alltablesize(atoi(argv[2]));
     } 
     else 
     {
