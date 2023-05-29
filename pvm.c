@@ -366,35 +366,37 @@ void alltablesize(int pid)
     int         level_of_paging = 4;
     int         paging_levels[4] = {0};
     char        pagemap_file[64];
-    char        pagemap_line[64];
-    int         pagemap;
+    char        pagemap_line[256];
+    FILE*         pagemap;
     uint64_t    start;
     uint64_t    end;
     uint64_t    page_table_size = 0;
     char        dummy_permissions[5];
     sprintf(pagemap_file, "/proc/%d/maps", pid);
 
-    pagemap =   open(pagemap_file, O_RDONLY);
-
+    pagemap =   fopen(pagemap_file, "r");
     if (pagemap < 0)
     {
         printf("Failed to open pagemap file\n");
         return;
     }
 
+    ssize_t bytes_read;
     // Read the file line by line
-    while (read(pagemap, pagemap_line, sizeof(pagemap_line)) > 0) {
-        
+    printf("haha\n");
+    while (fgets(pagemap_line, sizeof(pagemap_line), pagemap) != NULL) {
+
         pagemap_line[strcspn(pagemap_line, "\n")] = '\0';  // Null-terminate the line
         sscanf(pagemap_line, "%lx-%lx %s %*x %*x:%*x %*d", (unsigned long*)&start, (unsigned long*)&end, dummy_permissions);
-
         printf("daline:%s\n", pagemap_line);
+        printf("start: %lx\n", start);
+        printf("end: %lx\n", end);
         // Calculate the size of the memory mapping
         uint64_t mappingSize = end - start;
-
+        printf("mappingSize: %lx\n", mappingSize);
         // Align the mapping size to the page boundary
         uint64_t alignedSize = (mappingSize + PAGESIZE - 1) & ~(PAGESIZE - 1);
-
+        printf("alignedSize: %lx\n", alignedSize);
         // Calculate the size of the page table for this mapping
         uint64_t mappingPageTableSize = alignedSize >> ((level_of_paging - 1) * 9);
 
@@ -408,7 +410,7 @@ void alltablesize(int pid)
         }
     }
 
-    close(pagemap);
+    fclose(pagemap);
 
     // Calculate the size in kilobytes
     uint64_t pageTableSizeKB = page_table_size * PAGESIZE / 1024;
