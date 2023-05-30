@@ -450,12 +450,12 @@ void mapallin(int pid) {
             uint64_t virt_page_num = va / PAGESIZE;
             lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
             if (read(pagemap, &pagemap_entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) {
-                printf("Failed to read pagemap entry for VA 0x%lx\n", va);
+                printf("Failed to read pagemap entry for VA 0x%09lx\n", va >> 12);
                 continue;
             }
 
             if ((pagemap_entry & (1ULL << 63)) != 0) {
-                printf("mapping: vpn=0x%lx: pfn=0x%lx\n", va, get_entry_frame(pagemap_entry));
+                printf("mapping: vpn=0x%09lx: pfn=0x%09lx\n", va >> 12, get_entry_frame(pagemap_entry));
             }
         }
     }
