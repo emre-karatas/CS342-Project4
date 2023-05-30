@@ -375,7 +375,7 @@ void alltablesize(int pid)
     sprintf(pagemap_file, "/proc/%d/maps", pid);
 
     pagemap =   fopen(pagemap_file, "r");
-    if (pagemap < 0)
+    if (pagemap == NULL)
     {
         printf("Failed to open pagemap file\n");
         return;
@@ -383,37 +383,27 @@ void alltablesize(int pid)
 
     ssize_t bytes_read;
     // Read the file line by line
-    printf("haha\n");
+    //printf("haha\n");
+    
     while (fgets(pagemap_line, sizeof(pagemap_line), pagemap) != NULL) {
-
         pagemap_line[strcspn(pagemap_line, "\n")] = '\0';  // Null-terminate the line
         sscanf(pagemap_line, "%lx-%lx %s %*x %*x:%*x %*d", (unsigned long*)&start, (unsigned long*)&end, dummy_permissions);
-        printf("daline:%s\n", pagemap_line);
-        printf("start: %lx\n", start);
-        printf("end: %lx\n", end);
-        // Calculate the size of the memory mapping
-        uint64_t mappingSize = end - start;
-        printf("mappingSize: %lx\n", mappingSize);
-        // Align the mapping size to the page boundary
-        uint64_t alignedSize = (mappingSize + PAGESIZE - 1) & ~(PAGESIZE - 1);
-        printf("alignedSize: %lx\n", alignedSize);
-        // Calculate the size of the page table for this mapping
-        uint64_t mappingPageTableSize = alignedSize >> ((level_of_paging - 1) * 9);
 
-        // Accumulate the page table size
+        uint64_t mappingSize = end - start;
+        uint64_t alignedSize = (mappingSize + PAGESIZE - 1) & ~(PAGESIZE - 1);
+        uint64_t mappingPageTableSize = alignedSize / sizeof(uint64_t);
+
         page_table_size += mappingPageTableSize;
 
-        // Count the number of page tables at each level
-        for (int i = 0; i < level_of_paging; i++)
-        {
-            paging_levels[i] += (mappingPageTableSize >> (9 * i)) & 0x1FF;
+        for (int i = 0; i < level_of_paging; i++) {
+            paging_levels[i] += (mappingPageTableSize >> (9 * (3 - i))) & 0x1FF;
         }
     }
 
     fclose(pagemap);
 
     // Calculate the size in kilobytes
-    uint64_t pageTableSizeKB = page_table_size * PAGESIZE / 1024;
+    uint64_t pageTableSizeKB = page_table_size * sizeof(uint64_t) / 1024;
 
     // Print the total page table size
     printf("(pid=%d) total memory occupied by 4-level page table: %lu KB (%lu frames)\n",
