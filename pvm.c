@@ -352,11 +352,11 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
 
         if ((pagemap_entry & (1ULL << 63)) == 0) 
         {
-            printf("VA 0x%lx: not-in-memory\n", va);
+            printf("va=0x%012lx: not-in-memory\n", va >> 12);
         } 
         else
         {
-            printf("VA 0x%lx: Frame 0x%lx\n", va, get_entry_frame(pagemap_entry));
+            printf("va=0x%012lx pfn=0x%09lx\n", va >> 12, get_entry_frame(pagemap_entry));
         }
     }
 
