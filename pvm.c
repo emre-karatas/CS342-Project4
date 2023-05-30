@@ -80,10 +80,15 @@ void frameinfo(uint64_t pfn)
 
     uint64_t flags = get_frame_flags(pfn);
     int num_flags = sizeof(flag_names) / sizeof(flag_names[0]);
-
+    int five_cnt = 0;
     for (int i = 0; i < num_flags; i++) 
     {
-        printf("%02d %s\n",i,flag_names[i]);
+        printf("%02d. %-20s",i,flag_names[i]);
+        five_cnt++;
+        if(five_cnt == 5) {
+            printf("\n");
+            five_cnt = 0;
+        }
     }
     printf("\n");
     
