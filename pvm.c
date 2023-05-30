@@ -107,75 +107,85 @@ void frameinfo(uint64_t pfn)
 }
 
 
-
 void memused(int pid) 
 {
-    char pagemap_file[64];
-    char maps_file[64];
-    sprintf(pagemap_file, "/proc/%dint pid, uint64_t va1, uint64_t va2/pagemap", pid);
-    sprintf(maps_file, "/proc/%d/maps", pid);
+    char line[512];
 
-    FILE* maps = fopen(maps_file, "r");
-    if (maps == NULL) {
-        printf("Failed to open maps file\n");
-        return;
-    }
+    // Open the file for reading
+    char mapfile_path[256];
+    sprintf(mapfile_path,"/proc/%d/maps", pid);
+    FILE *mapfile= fopen(mapfile_path, "r");
 
-    char line[256];
-    uint64_t total_virt         = 0;
-    uint64_t total_phys_excl    = 0;
-    uint64_t total_phys         = 0;
+    uint64_t totalVM = 0;
+    uint64_t totalPM = 0;
+    uint64_t exclusivePM = 0;
 
-    while (fgets(line, sizeof(line), maps)) 
+    int go = 1;
+
+    // Read the file line by line until EOF is reached
+    while (fgets(line, sizeof(line), mapfile) != NULL) 
     {
-        uint64_t virt_start, virt_end;
-        sscanf(line, "%lx-%lx", &virt_start, &virt_end);
+        // Process the line here
+        char *token;
+        char *firstPart;
+        char *secondPart;
 
-        uint64_t virt_size = virt_end - virt_start;
-        total_virt += virt_size;
-
-        int pagemap = open(pagemap_file, O_RDONLY);
-        if (pagemap < 0) 
+        token = strtok(line, "-");
+        if (token != NULL) 
         {
-            printf("Failed to open pagemap file\n");
-            fclose(maps);
-            return;
+            firstPart = malloc(strlen(token) + 1);  // Allocate memory for the first part
+            strcpy(firstPart, token);               // Copy the first part into the variable
         }
 
-        uint64_t num_pages = virt_size / PAGESIZE;
-        for (uint64_t i = 0; i < num_pages; i++) 
+        token = strtok(NULL, " ");
+        if (token != NULL) 
         {
-            uint64_t virt_addr = virt_start + i * PAGESIZE;
-            uint64_t offset = virt_addr / PAGESIZE * PAGEMAP_ENTRY_SIZE;
+            secondPart = malloc(strlen(token) + 1); // Allocate memory for the second part
+            strcpy(secondPart, token);              // Copy the second part into the variable
+        }
 
-            uint64_t entry;
-            lseek(pagemap, offset, SEEK_SET);
-            if (read(pagemap, &entry, PAGEMAP_LENGTH) != PAGEMAP_LENGTH) 
+        uint64_t startAddr = strtoul(firstPart, NULL, 16);
+        uint64_t endAddr = strtoul(secondPart, NULL, 16);
+
+        char pagemap_path[256];
+        sprintf(pagemap_path, "/proc/%d/pagemap", pid);
+
+        int pagemapfile = open(pagemap_path, O_RDONLY);
+
+        for (uint64_t i = startAddr; i < endAddr; i += PAGESIZE) 
+        {
+          // find the frame number
+          uint64_t offset = i / PAGESIZE * sizeof(uint64_t);
+          lseek(pagemapfile, offset, SEEK_SET);
+          uint64_t entry;
+          read(pagemapfile, &entry, sizeof(uint64_t));
+          uint64_t valid = (entry >> 63) & 1;
+          if (valid) 
+          {
+            uint64_t frame_number = entry & ((1UL << 55) - 1);
+            uint64_t offset2 = frame_number * sizeof(uint64_t);
+            int kpagecount = open(KPAGECOUNT_PATH, O_RDONLY);
+            lseek(kpagecount, offset2, SEEK_SET);
+
+            uint64_t count;
+            read(kpagecount, &count, sizeof(uint64_t));
+
+            if (count == 1) 
             {
-                printf("Failed to read pagemap entry\n");
-                close(pagemap);
-                fclose(maps);
-                return;
+                exclusivePM += PAGESIZE;
             }
-            if (entry & (1ULL << 63)) 
-            { // page is present in memory
-                total_phys++;
-                if (entry & (1ULL << 62)) 
-                { // page is exclusive
-                    total_phys_excl++;
-                }
+            if (count >= 1) 
+            {
+              totalPM += PAGESIZE;
             }
+          }
+          totalVM += PAGESIZE;
         }
-
-        close(pagemap);
     }
+    printf("(pid:%d) memused: virtual=%ld KB, pmem_all=%ld KB, pmem_alone=%ld KB, mappedonce=%ld KB\n",pid,totalVM/1024,totalPM/1024,(totalPM-exclusivePM)/1024,exclusivePM/1024);
 
-    fclose(maps);
-
-    printf("Total virtual memory used: %lu KB\n", total_virt / 1024);
-    printf("Total physical memory used (exclusive): %lu KB\n", total_phys_excl * PAGESIZE / 1024);
-    printf("Total physical memory used (shared + exclusive): %lu KB\n", total_phys * PAGESIZE / 1024);
-
+    // Close the file
+    fclose(mapfile);
 }
 
 void mapva(int pid, uint64_t va)
