@@ -360,9 +360,9 @@ void mapall(int pid) {
         }
 
         for (uint64_t va = va_start; va < va_end; va += PAGESIZE) {
-            if (va == va_end- PAGESIZE) {
+            if (va == va_end-PAGESIZE) {
                 break;
-            }
+            } //NOT SURE
             uint64_t pagemap_entry;
             uint64_t virt_page_num = va / PAGESIZE;
             lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
@@ -388,6 +388,7 @@ void mapall(int pid) {
             } else {
                 printf("mapping: vpn=0x%lx pfn=0x%lx, fname=%s\n", va, get_entry_frame(pagemap_entry), fname);
             }
+            
         }
     }
 
@@ -423,6 +424,9 @@ void mapallin(int pid) {
         }
 
         for (uint64_t va = va_start; va < va_end; va += PAGESIZE) {
+            if (va == va_end-PAGESIZE) {
+                break;
+            } //NOT SURE
             uint64_t pagemap_entry;
             uint64_t virt_page_num = va / PAGESIZE;
             lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
