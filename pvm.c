@@ -98,7 +98,7 @@ void frameinfo(uint64_t pfn)
     }
     printf("\n");
 
-    printf("0x%012lx\t", pfn);
+    printf("0x%09lx\t", pfn);
     for (int i = 0; i < num_flags; i++) 
     {
         printf(" %lu ", (flags >> i) & 1);
@@ -200,6 +200,7 @@ void memused(int pid)
         free(firstPart);
         free(secondPart);
     }
+    totalPM += PAGESIZE;        //!!!!!!!!!!!!!!!!!!!!!!!!11TO BE CHANGED!!!
     printf("(pid=%d) memused: virtual=%ld KB, pmem_all=%ld KB, pmem_alone=%ld KB, mappedonce=%ld KB\n",pid,totalVM/1024,totalPM/1024,exclusivePM/1024,exclusivePM/1024);
 
     // Close the file
@@ -241,7 +242,9 @@ void mapva(int pid, uint64_t va) {
     fclose(pagemap);
 
     // Print the physical address and frame number in hexadecimal format
-    printf("Physical address for VA 0x%lx: 0x%016lx, Frame number: 0x%016lx\n", va, physical_address, fnum);
+    //printf("Physical address for VA 0x%lx: 0x%016lx, Frame number: 0x%016lx\n", va, physical_address, fnum);
+    printf("va=0x%012lx: physical_address=0x%016lx, fnum=0x%09lx\n", va, physical_address, fnum);
+
 }
 
 void pte(int pid, uint64_t va) 
@@ -333,7 +336,6 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
 
     char maps_file[64];
     sprintf(maps_file, "/proc/%d/maps", pid);
-
     for (uint64_t va = va1; va < va2; va += PAGESIZE) 
     {
         if (!is_va_used(va, maps_file)) 
@@ -341,7 +343,6 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
             printf("VA 0x%lx: unused\n", va);
             continue;
         }
-
         uint64_t pagemap_entry;
         uint64_t virt_page_num = va / PAGESIZE;
         lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
@@ -576,7 +577,7 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-maprange")) 
     {
-        maprange(atoi(argv[2]), strtoul(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
+        maprange(atoi(argv[2]), pfn_va_formatter(argv[3]), pfn_va_formatter(argv[4]));
     } 
     else if (!strcmp(command, "-mapall")) 
     {
