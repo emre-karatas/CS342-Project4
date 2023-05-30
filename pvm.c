@@ -71,13 +71,36 @@ uint64_t get_mapping_count(uint64_t pfn)
 void frameinfo(char* pfn_str) 
 {
     uint64_t pfn = strtoull(pfn_str, NULL, 16);
+    
+    const char* flag_names[] = {
+        "LOCKED", "ERROR", "REFERENCED", "UPTODATE", "DIRTY", "LRU", "ACTIVE", "SLAB",
+        "WRITEBACK", "RECLAIM", "BUDDY", "MMAP", "ANON", "SWAPCACHE", "SWAPBACKED",
+        "COMPOUND_HEAD", "COMPOUND_TAIL", "HUGE", "UNEVICTABLE", "HWPOISON",
+        "NOPAGE", "KSM", "THP", "BALLOON", "ZERO_PAGE", "IDLE"
+    };
 
-    uint64_t pageflags = get_frame_flags(pfn);
-    uint64_t pagecount = get_mapping_count(pfn);
+    uint64_t flags = get_frame_flags(pfn);
+    int num_flags = sizeof(flag_names) / sizeof(flag_names[0]);
 
-    printf("Information for frame %lu:\n", pfn);
-    printf("Mapping count: %lu\n", pagecount);
-    printf("Flags: %lu\n", pageflags);
+    for (int i = 0; i < num_flags; i++) 
+    {
+        printf("%02d %s\n",i,flag_names[i]);
+    }
+    printf("\n");
+    
+    printf("FRAME#\t\t");
+    for (int i = 0; i < num_flags; i++) 
+    {
+        printf("%02d ", i);
+    }
+    printf("\n");
+
+    printf("0x%012lx\t", pfn);
+    for (int i = 0; i < num_flags; i++) 
+    {
+        printf(" %lu ", (flags >> i) & 1);
+    }
+    printf("\n");
 }
 
 
