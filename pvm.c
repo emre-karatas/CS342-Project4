@@ -200,6 +200,7 @@ void memused(int pid)
         free(firstPart);
         free(secondPart);
     }
+    totalPM += PAGESIZE;
     printf("(pid=%d) memused: virtual=%ld KB, pmem_all=%ld KB, pmem_alone=%ld KB, mappedonce=%ld KB\n",pid,totalVM/1024,totalPM/1024,exclusivePM/1024,exclusivePM/1024);
 
     // Close the file
@@ -241,7 +242,7 @@ void mapva(int pid, uint64_t va) {
     fclose(pagemap);
 
     // Print the physical address and frame number in hexadecimal format
-    printf("Physical address for VA 0x%lx: 0x%016lx, Frame number: 0x%016lx\n", va, physical_address, fnum);
+    printf("va=0x%012lx: physical_address=0x%016lx, fnum=0x%09lx\n", va, physical_address, fnum);
 }
 
 void pte(int pid, uint64_t va) 
@@ -574,7 +575,7 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-maprange")) 
     {
-        maprange(atoi(argv[2]), strtoul(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
+        maprange(atoi(argv[2]), pfn_va_formatter(argv[3]), pfn_va_formatter(argv[4]));
     } 
     else if (!strcmp(command, "-mapall")) 
     {
