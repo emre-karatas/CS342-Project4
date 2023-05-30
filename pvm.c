@@ -207,26 +207,41 @@ void memused(int pid)
 }
 
 
-void mapva(int pid, uint64_t va)
-{
-    int         level_of_paging = 4;
-    int         paging_levels[4] = {0};
-    char        pagemap_file[64];
-    char        pagemap_line[256];
-    FILE*         pagemap;
-    uint64_t    start;
-    uint64_t    end;
-    uint64_t    page_table_size = 0;
-    char        dummy_permissions[5];
-    uint64_t         num_page_tables;
-    sprintf(pagemap_file, "/proc/%d/maps", pid);
+void mapva(int pid, uint64_t va) {
+    int level_of_paging = 4;
+    int paging_levels[4] = {0};
+    char pagemap_file[64];
+    char pagemap_line[256];
+    FILE* pagemap;
+    uint64_t start;
+    uint64_t end;
+    uint64_t page_table_size = 0;
+    char dummy_permissions[5];
+    uint64_t num_page_tables;
+    sprintf(pagemap_file, "/proc/%d/pagemap", pid);
 
-    pagemap =   fopen(pagemap_file, "r");
-    if (pagemap == NULL)
-    {
+    pagemap = fopen(pagemap_file, "r");
+    if (pagemap == NULL) {
         printf("Failed to open pagemap file\n");
         return;
     }
+
+    // Find the corresponding physical address
+    uint64_t virt_page_num = va / PAGESIZE;
+    fseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
+    uint64_t pagemap_entry;
+    if (fread(&pagemap_entry, PAGEMAP_LENGTH, 1, pagemap) != 1) {
+        printf("Failed to read pagemap entry for VA 0x%lx\n", va);
+        fclose(pagemap);
+        return;
+    }
+    uint64_t physical_address = get_entry_frame(pagemap_entry) * PAGESIZE + (va % PAGESIZE);
+    uint64_t fnum = get_entry_frame(pagemap_entry);
+
+    fclose(pagemap);
+
+    // Print the physical address and frame number in hexadecimal format
+    printf("Physical address for VA 0x%lx: 0x%016lx, Frame number: 0x%016lx\n", va, physical_address, fnum);
 }
 
 void pte(int pid, uint64_t va) 
