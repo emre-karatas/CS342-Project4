@@ -222,14 +222,14 @@ void pte(int pid, uint64_t va)
     close(pagemap);
 
     printf("[vaddr=0x%012lx, vpn=0x%09lx]: present=%d, swapped=%d, file-anon=%d, exclusive=%d, softdirty=%d, number=0x%09lx\n",
-            va, 
-            va >> 12, 
-            (pagemap_entry & (1ULL << 63)) != 0, 
-            (pagemap_entry & (1ULL << 62)) != 0,
-            (pagemap_entry & (1ULL << 61)) != 0,
-            (pagemap_entry & (1ULL << 56)) != 0,
-            (pagemap_entry & (1ULL << 55)) != 0,
-            get_entry_frame(pagemap_entry));
+            va,                                     //Pagemap entry for VA
+            va >> 12,                               //Page frame number
+            (pagemap_entry & (1ULL << 63)) != 0,    //Present
+            (pagemap_entry & (1ULL << 62)) != 0,    //Swapped
+            (pagemap_entry & (1ULL << 61)) != 0,    //File-page of shared-anon
+            (pagemap_entry & (1ULL << 56)) != 0,    //Page exclusively mapped
+            (pagemap_entry & (1ULL << 55)) != 0,    //Soft-dirty
+            get_entry_frame(pagemap_entry));        //PFN
     /*
     printf("Pagemap entry for VA 0x%lx:\n", va);
     printf("Page frame number: 0x%lx\n", get_entry_frame(pagemap_entry));
