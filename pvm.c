@@ -344,7 +344,9 @@ void mapall(int pid) {
     char line[256];
     while (fgets(line, sizeof(line), maps_fp) != NULL) {
         uint64_t va_start, va_end;
-        if (sscanf(line, "%lx-%lx", &va_start, &va_end) != 2) {
+        char fname[256];  // Added to store the filename
+
+        if (sscanf(line, "%lx-%lx %*s %*s %*s %*s %s", &va_start, &va_end, fname) != 3) {
             continue;
         }
 
@@ -358,9 +360,9 @@ void mapall(int pid) {
             }
 
             if ((pagemap_entry & (1ULL << 63)) == 0) {
-                printf("VA 0x%lx: not-in-memory\n", va);
+                printf("VA 0x%lx: not-in-memory %s\n", va, fname);
             } else {
-                printf("VA 0x%lx: Frame 0x%lx\n", va, get_entry_frame(pagemap_entry));
+                printf("VA 0x%lx: Frame 0x%lx %s\n", va, get_entry_frame(pagemap_entry), fname);
             }
         }
     }
@@ -406,7 +408,7 @@ void mapallin(int pid) {
             }
 
             if ((pagemap_entry & (1ULL << 63)) != 0) {
-                printf("VA 0x%lx: Frame 0x%lx\n", va, get_entry_frame(pagemap_entry));
+                printf("mapping: vpn=0x%lx: pfn=0x%lx\n", va, get_entry_frame(pagemap_entry));
             }
         }
     }
