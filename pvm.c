@@ -441,9 +441,7 @@ void mapallin(int pid) {
         }
 
         for (uint64_t va = va_start; va < va_end; va += PAGESIZE) {
-            if (va == va_end-PAGESIZE) {
-                break;
-            } //NOT SURE
+            
             uint64_t pagemap_entry;
             uint64_t virt_page_num = va / PAGESIZE;
             lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
