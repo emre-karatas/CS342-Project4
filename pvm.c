@@ -15,7 +15,7 @@
 
 
 // Function prototypes
-void frameinfo(char* pfn);
+void frameinfo(uint64_t pfn);
 void memused(int pid);
 void mapva(int pid, uint64_t va);    
 void pte(int pid, uint64_t va);
@@ -24,6 +24,7 @@ void mapall(int pid);
 void mapallin(int pid);
 void alltablesize(int pid);
 
+uint64_t pfn_va_formatter(char* arg);
 
 uint64_t get_entry_frame(uint64_t entry) 
 {
@@ -68,10 +69,8 @@ uint64_t get_mapping_count(uint64_t pfn)
     return pagecount;
 }
 
-void frameinfo(char* pfn_str) 
-{
-    uint64_t pfn = strtoull(pfn_str, NULL, 16);
-    
+void frameinfo(uint64_t pfn) 
+{    
     const char* flag_names[] = {
         "LOCKED", "ERROR", "REFERENCED", "UPTODATE", "DIRTY", "LRU", "ACTIVE", "SLAB",
         "WRITEBACK", "RECLAIM", "BUDDY", "MMAP", "ANON", "SWAPCACHE", "SWAPBACKED",
@@ -222,7 +221,7 @@ void pte(int pid, uint64_t va)
 
     close(pagemap);
 
-    printf("[vaddr=%lx, vpn=%lx]: present=%d, swapped=%d, file-anon=%d, exclusive=%d, softdirty=%d, number=%lx\n",
+    printf("[vaddr=0x%012lx, vpn=%09lx]: present=%d, swapped=%d, file-anon=%d, exclusive=%d, softdirty=%d, number=%lx\n",
             va, 
             va >> 12, 
             (pagemap_entry & (1ULL << 63)) != 0, 
@@ -469,6 +468,22 @@ void alltablesize(int pid)
 
 }
 
+uint64_t pfn_va_formatter(char* arg)
+{
+    uint64_t value;
+
+    // Check if the input argument starts with "0x"
+    if (arg[0] == '0' && arg[1] == 'x') {
+        // Input is already in hexadecimal format
+        value = strtoull(arg, NULL, 16);
+    } else {
+        // Convert decimal input to hexadecimal
+        unsigned long decimal = strtoul(arg, NULL, 10);
+        value = (uint64_t)decimal;
+    }
+    return value;
+}
+
 int main(int argc, char* argv[]) 
 {
     if (argc < 3) 
@@ -480,7 +495,7 @@ int main(int argc, char* argv[])
     char* command = argv[1];
     if (!strcmp(command, "-frameinfo")) 
     {
-        frameinfo(argv[2]);
+        frameinfo(pfn_va_formatter(argv[2]));
     } 
     else if (!strcmp(command, "-memused")) 
     {
@@ -488,23 +503,11 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-mapva")) 
     {
-        mapva(atoi(argv[2]), atoi(argv[3]));
+        mapva(atoi(argv[2]), pfn_va_formatter(argv[3]));
     } 
     else if (!strcmp(command, "-pte")) 
     {
-        char *input = argv[3];
-        uint64_t value;
-
-        // Check if the input argument starts with "0x"
-        if (input[0] == '0' && input[1] == 'x') {
-            // Input is already in hexadecimal format
-            value = strtoull(input, NULL, 16);
-        } else {
-            // Convert decimal input to hexadecimal
-            unsigned long decimal = strtoul(input, NULL, 10);
-            value = (uint64_t)decimal;
-        }
-        pte(atoi(argv[2]), value);
+        pte(atoi(argv[2]), pfn_va_formatter(argv[3]));
     } 
     else if (!strcmp(command, "-maprange")) 
     {
