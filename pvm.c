@@ -497,7 +497,8 @@ void alltablesize(int pid)
             uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x0000001FF;
             if (pageTableEntries > 0) {
                 paging_levels[i]++;
-                num_page_tables++;
+                //num_page_tables++;
+                num_page_tables += pageTableEntries;
             }
         }
     }
