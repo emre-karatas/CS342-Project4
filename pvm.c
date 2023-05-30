@@ -200,7 +200,6 @@ void memused(int pid)
         free(firstPart);
         free(secondPart);
     }
-    totalPM += PAGESIZE;
     printf("(pid=%d) memused: virtual=%ld KB, pmem_all=%ld KB, pmem_alone=%ld KB, mappedonce=%ld KB\n",pid,totalVM/1024,totalPM/1024,exclusivePM/1024,exclusivePM/1024);
 
     // Close the file
