@@ -209,16 +209,8 @@ void memused(int pid)
 
 
 void mapva(int pid, uint64_t va) {
-    int level_of_paging = 4;
-    int paging_levels[4] = {0};
     char pagemap_file[64];
-    char pagemap_line[256];
     FILE* pagemap;
-    uint64_t start;
-    uint64_t end;
-    uint64_t page_table_size = 0;
-    char dummy_permissions[5];
-    uint64_t num_page_tables;
     sprintf(pagemap_file, "/proc/%d/pagemap", pid);
 
     pagemap = fopen(pagemap_file, "r");
@@ -483,7 +475,6 @@ void alltablesize(int pid)
     FILE*         pagemap;
     uint64_t    start;
     uint64_t    end;
-    uint64_t    page_table_size = 0;
     char        dummy_permissions[5];
     uint64_t         num_page_tables;
     sprintf(pagemap_file, "/proc/%d/maps", pid);
@@ -495,10 +486,6 @@ void alltablesize(int pid)
         return;
     }
 
-    ssize_t bytes_read;
-    // Read the file line by line
-    //printf("haha\n");
-    
     while (fgets(pagemap_line, sizeof(pagemap_line), pagemap) != NULL) {
         pagemap_line[strcspn(pagemap_line, "\n")] = '\0';  // Null-terminate the line
         sscanf(pagemap_line, "%lx-%lx %s %*x %*x:%*x %*d", (unsigned long*)&start, (unsigned long*)&end, dummy_permissions);
