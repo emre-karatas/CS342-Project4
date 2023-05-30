@@ -200,7 +200,7 @@ void memused(int pid)
         free(firstPart);
         free(secondPart);
     }
-    totalPM += PAGESIZE;        //!!!!!!!!!!!!!!!!!!!!!!!!11TO BE CHANGED!!!
+    totalPM += PAGESIZE;
     printf("(pid=%d) memused: virtual=%ld KB, pmem_all=%ld KB, pmem_alone=%ld KB, mappedonce=%ld KB\n",pid,totalVM/1024,totalPM/1024,exclusivePM/1024,exclusivePM/1024);
 
     // Close the file
@@ -336,6 +336,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
 
     char maps_file[64];
     sprintf(maps_file, "/proc/%d/maps", pid);
+
     for (uint64_t va = va1; va < va2; va += PAGESIZE) 
     {
         if (!is_va_used(va, maps_file)) 
@@ -343,6 +344,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
             printf("VA 0x%lx: unused\n", va);
             continue;
         }
+
         uint64_t pagemap_entry;
         uint64_t virt_page_num = va / PAGESIZE;
         lseek(pagemap, virt_page_num * PAGEMAP_ENTRY_SIZE, SEEK_SET);
@@ -577,7 +579,7 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-maprange")) 
     {
-        maprange(atoi(argv[2]), pfn_va_formatter(argv[3]), pfn_va_formatter(argv[4]));
+        maprange(atoi(argv[2]), strtoul(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
     } 
     else if (!strcmp(command, "-mapall")) 
     {
