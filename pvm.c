@@ -369,7 +369,19 @@ void mapall(int pid) {
             }
 
             if ((pagemap_entry & (1ULL << 63)) == 0) {
-                printf("mapping: vpn=0x%lx not-in-memory, swpd=0, fname=%s\n", va, fname);
+                FILE *status_fp;
+                char status_file[64];
+                sprintf(status_file, "/proc/%d/status", pid);
+                status_fp = fopen(status_file, "r");
+                char status_line[256];
+                char swpd[64];
+                while (fgets(status_line, sizeof(status_line), status_fp) != NULL) {
+                    if (sscanf(status_line, "VmSwap: %s", swpd) == 1) {
+                        break;
+                    }
+                }
+                fclose(status_fp);
+                printf("mapping: vpn=0x%lx not-in-memory, swpd=%s, fname=%s\n", va, swpd, fname);
             } else {
                 printf("mapping: vpn=0x%lx pfn=0x%lx, fname=%s\n", va, get_entry_frame(pagemap_entry), fname);
             }
