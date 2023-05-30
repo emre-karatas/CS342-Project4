@@ -26,8 +26,7 @@ void alltablesize(int pid);
 
 uint64_t pfn_va_formatter(char* arg);
 
-uint64_t get_entry_frame(uint64_t entry) 
-{
+uint64_t get_entry_frame(uint64_t entry) {
     return entry & 0x7FFFFFFFFFFFFF;
 }
 
