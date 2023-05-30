@@ -154,7 +154,24 @@ void memused(int pid)
 
 void mapva(int pid, uint64_t va)
 {
+    int         level_of_paging = 4;
+    int         paging_levels[4] = {0};
+    char        pagemap_file[64];
+    char        pagemap_line[256];
+    FILE*         pagemap;
+    uint64_t    start;
+    uint64_t    end;
+    uint64_t    page_table_size = 0;
+    char        dummy_permissions[5];
+    uint64_t         num_page_tables;
+    sprintf(pagemap_file, "/proc/%d/maps", pid);
 
+    pagemap =   fopen(pagemap_file, "r");
+    if (pagemap == NULL)
+    {
+        printf("Failed to open pagemap file\n");
+        return;
+    }
 }
 
 void pte(int pid, uint64_t va) 
@@ -182,6 +199,16 @@ void pte(int pid, uint64_t va)
 
     close(pagemap);
 
+    printf("[vaddr=%lx, vpn=%lx]: present=%d, swapped=%d, file-anon=%d, exclusive=%d, softdirty=%d, number=%lx\n",
+            va, 
+            va >> 12, 
+            (pagemap_entry & (1ULL << 63)) != 0, 
+            (pagemap_entry & (1ULL << 62)) != 0,
+            (pagemap_entry & (1ULL << 61)) != 0,
+            (pagemap_entry & (1ULL << 56)) != 0,
+            (pagemap_entry & (1ULL << 55)) != 0,
+            get_entry_frame(pagemap_entry));
+    /*
     printf("Pagemap entry for VA 0x%lx:\n", va);
     printf("Page frame number: 0x%lx\n", get_entry_frame(pagemap_entry));
     printf("Present: %d\n", (pagemap_entry & (1ULL << 63)) != 0);
@@ -189,7 +216,7 @@ void pte(int pid, uint64_t va)
     printf("File-page or shared-anon: %d\n", (pagemap_entry & (1ULL << 61)) != 0);
     printf("Page exclusively mapped: %d\n", (pagemap_entry & (1ULL << 56)) != 0);
     printf("Soft-dirty: %d\n", (pagemap_entry & (1ULL << 55)) != 0);
-
+    */
     if (pagemap_entry & (1ULL << 62)) 
     {   // page is swapped
         uint64_t swap_offset = (pagemap_entry >> 5) & 0x3FFFFFFFFFF;
@@ -442,11 +469,23 @@ int main(int argc, char* argv[])
     } 
     else if (!strcmp(command, "-pte")) 
     {
-        pte(atoi(argv[2]), strtoull(argv[3], NULL, 10));
+        char *input = argv[3];
+        uint64_t value;
+
+        // Check if the input argument starts with "0x"
+        if (input[0] == '0' && input[1] == 'x') {
+            // Input is already in hexadecimal format
+            value = strtoull(input, NULL, 16);
+        } else {
+            // Convert decimal input to hexadecimal
+            unsigned long decimal = strtoul(input, NULL, 10);
+            value = (uint64_t)decimal;
+        }
+        pte(atoi(argv[2]), value);
     } 
     else if (!strcmp(command, "-maprange")) 
     {
-        maprange(atoi(argv[2]), strtoull(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
+        maprange(atoi(argv[2]), strtoul(argv[3], NULL, 10), strtoull(argv[4], NULL, 10));
     } 
     else if (!strcmp(command, "-mapall")) 
     {
