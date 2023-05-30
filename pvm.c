@@ -359,9 +359,9 @@ void mapall(int pid) {
             }
 
             if ((pagemap_entry & (1ULL << 63)) == 0) {
-                printf("VA 0x%lx: not-in-memory %s\n", va, fname);
+                printf("mapping: vpn=0x%lx not-in-memory, swpd=0, fname=%s\n", va, fname);
             } else {
-                printf("VA 0x%lx: Frame 0x%lx %s\n", va, get_entry_frame(pagemap_entry), fname);
+                printf("mapping: vpn=0x%lx pfn=0x%lx, fname=%s\n", va, get_entry_frame(pagemap_entry), fname);
             }
         }
     }
