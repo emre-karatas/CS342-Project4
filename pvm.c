@@ -221,7 +221,7 @@ void pte(int pid, uint64_t va)
 
     close(pagemap);
 
-    printf("[vaddr=0x%012lx, vpn=0x%09lx]: present=%d, swapped=%d, file-anon=%d, exclusive=%d, softdirty=%d, number=%lx\n",
+    printf("[vaddr=0x%012lx, vpn=0x%09lx]: present=%d, swapped=%d, file-anon=%d, exclusive=%d, softdirty=%d, number=0x%09lx\n",
             va, 
             va >> 12, 
             (pagemap_entry & (1ULL << 63)) != 0, 
