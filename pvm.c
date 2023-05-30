@@ -98,7 +98,7 @@ void frameinfo(uint64_t pfn)
     }
     printf("\n");
 
-    printf("0x%09lx\t", pfn);
+    printf("0x%012lx\t", pfn);
     for (int i = 0; i < num_flags; i++) 
     {
         printf(" %lu ", (flags >> i) & 1);
@@ -241,9 +241,7 @@ void mapva(int pid, uint64_t va) {
     fclose(pagemap);
 
     // Print the physical address and frame number in hexadecimal format
-    //printf("Physical address for VA 0x%lx: 0x%016lx, Frame number: 0x%016lx\n", va, physical_address, fnum);
-    printf("va=0x%012lx: physical_address=0x%016lx, fnum=0x%09lx\n", va, physical_address, fnum);
-
+    printf("Physical address for VA 0x%lx: 0x%016lx, Frame number: 0x%016lx\n", va, physical_address, fnum);
 }
 
 void pte(int pid, uint64_t va) 
@@ -298,27 +296,25 @@ void pte(int pid, uint64_t va)
     }
 }
 
-bool is_va_used(uint64_t va, char *maps_file) 
-{
-    FILE *maps = fopen(maps_file, "r");
-    if (maps == NULL) 
-    {
+int is_va_used(uint64_t va, const char* maps_file) {
+    FILE* maps = fopen(maps_file, "r");
+    if (maps == NULL) {
         printf("Failed to open maps file\n");
-        return false;
+        return 0;
     }
 
-    uint64_t start, end;
-    while (fscanf(maps, "%lx-%lx", &start, &end) != EOF) 
-    {
-        if (va >= start && va < end) 
-        {
+    char line[512];
+    while (fgets(line, sizeof(line), maps) != NULL) {
+        uint64_t start, end;
+        sscanf(line, "%lx-%lx", &start, &end);
+        if (va >= start && va < end) {
             fclose(maps);
-            return true;
+            return 1;
         }
     }
 
     fclose(maps);
-    return false;
+    return 0;
 }
 
 void maprange(int pid, uint64_t va1, uint64_t va2) 
