@@ -493,7 +493,8 @@ void alltablesize(int pid)
 
         uint64_t mappingSize = end - start;
         uint64_t numPageTableEntries = mappingSize >> 12;  // Shift by page offset (12 bits)
-
+        num_page_tables += numPageTableEntries / ENTRY_PER_PAGE;
+        /*
         for (int i = 0; i < level_of_paging; i++)
         {
             uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x1FF;
@@ -503,6 +504,7 @@ void alltablesize(int pid)
                 num_page_tables += pageTableEntries;
             }
         }
+        */
     }
 
     fclose(pagemap);
