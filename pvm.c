@@ -549,18 +549,16 @@ void alltablesize(int pid)
             paging_levels[2]++;
             paging_levels[3]++;
             num_page_tables += 3;
-            continue;
         }
-        if(!level_3_prev_checking[level_indexes[1]][level_indexes[2]])
+        else if(!level_3_prev_checking[level_indexes[1]][level_indexes[2]])
         {
             level_3_prev_checking[level_indexes[1]][level_indexes[2]] = 1;
             level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
             paging_levels[2]++;
             paging_levels[3]++;
             num_page_tables += 2;
-            continue;
         }
-        if(!level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]])
+        else if(!level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]])
         {
             level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
             paging_levels[3]++;
