@@ -539,6 +539,19 @@ void alltablesize(int pid)
 
     fclose(pagemap);
 
+    for(int i = 0; i < ENTRY_PER_PAGE; ++i)
+    {
+        for(int j = 0; j < ENTRY_PER_PAGE; ++j)
+        {
+            free(level_4_prev_checking[i][j]);
+        }
+        free(level_3_prev_checking[i]);
+        free(level_4_prev_checking[i]);
+    }
+    free(level_2_prev_checking);
+    free(level_3_prev_checking);
+    free(level_4_prev_checking);
+
     // Calculate the size in kilobytes
     uint64_t pageTableSizeKB = num_page_tables * PAGESIZE / 1024;
 
