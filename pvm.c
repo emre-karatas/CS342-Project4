@@ -507,7 +507,23 @@ void alltablesize(int pid) {
         }
     }
     fclose(file);
-
+    // Free the dynamically allocated memory
+    for (uint64_t i = 0; i < ENTRY_PER_PAGE; i++) {
+        if (page_table[i]) {
+            for (uint64_t j = 0; j < ENTRY_PER_PAGE; j++) {
+                if (page_table[i][j]) {
+                    for (uint64_t k = 0; k < ENTRY_PER_PAGE; k++) {
+                        if (page_table[i][j][k]) {
+                            free(page_table[i][j][k]);
+                        }
+                    }
+                    free(page_table[i][j]);
+                }
+            }
+            free(page_table[i]);
+        }
+    }
+    free(page_table);
     uint64_t pageTableSizeKB = (paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]) * PAGEMAP_ENTRY_SIZE * ENTRY_PER_PAGE / 1024;
     printf("(pid=%d) total memory occupied by 4-level page table: %lu KB (%lu frames)\n",
            pid, pageTableSizeKB, paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]);
