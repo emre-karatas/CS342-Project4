@@ -477,6 +477,11 @@ void alltablesize(int pid)
     uint64_t end;
     char dummy_permissions[5];
     uint64_t num_page_tables = 0;
+
+    int* level_2_prev_checking;
+    int** level_3_prev_checking;
+    int*** level_4_prev_checking;
+
     sprintf(pagemap_file, "/proc/%d/maps", pid);
 
     pagemap = fopen(pagemap_file, "r");
@@ -486,6 +491,33 @@ void alltablesize(int pid)
         return;
     }
 
+    level_2_prev_checking = malloc(ENTRY_PER_PAGE * sizeof(int));
+    for(int i = 0; i < ENTRY_PER_PAGE; ++i)
+    {
+        level_2_prev_checking[i] = 0;
+    }
+    level_3_prev_checking = malloc(ENTRY_PER_PAGE * sizeof(int*));
+    for(int i = 0; i < ENTRY_PER_PAGE; ++i)
+    {
+        level_3_prev_checking[i] = malloc(ENTRY_PER_PAGE * sizeof(int));
+        for(int j = 0; j < ENTRY_PER_PAGE; ++j)
+        {
+            level_3_prev_checking[i][j] = 0;
+        }
+    }
+    level_4_prev_checking = malloc(ENTRY_PER_PAGE * sizeof(int**));
+    for(int i = 0; i < ENTRY_PER_PAGE; ++i)
+    {
+        level_4_prev_checking[i] = malloc(ENTRY_PER_PAGE * sizeof(int*));
+        for(int j = 0; j < ENTRY_PER_PAGE; ++j)
+        {
+            level_4_prev_checking[i][j] = malloc(ENTRY_PER_PAGE * sizeof(int));
+            for(int k = 0; k < ENTRY_PER_PAGE; ++k)
+            {
+                level_4_prev_checking[i][j][k] = 0;
+            }
+        }
+    }
     while (fgets(pagemap_line, sizeof(pagemap_line), pagemap) != NULL)
     {
         pagemap_line[strcspn(pagemap_line, "\n")] = '\0';  // Null-terminate the line
@@ -494,7 +526,6 @@ void alltablesize(int pid)
         uint64_t mappingSize = end - start;
         uint64_t numPageTableEntries = mappingSize >> 12;  // Shift by page offset (12 bits)
         num_page_tables += numPageTableEntries / ENTRY_PER_PAGE;
-        /*
         for (int i = 0; i < level_of_paging; i++)
         {
             uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x1FF;
@@ -504,7 +535,6 @@ void alltablesize(int pid)
                 num_page_tables += pageTableEntries;
             }
         }
-        */
     }
 
     fclose(pagemap);
