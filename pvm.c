@@ -530,7 +530,7 @@ void alltablesize(int pid)
 
         for (int i = 0; i < level_of_paging; i++)
         {
-            level_indexes[i] = (start >> ( 12 + 9 * (level_of_paging - 1 - i) )) & 0x1FF;
+            level_indexes[i] = (start >> ( 12 + 9 * (level_of_paging - i) )) & 0x1FF;
             /*
             uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x1FF;
             if (pageTableEntries > 0)
@@ -542,9 +542,6 @@ void alltablesize(int pid)
         }
         if(!level_2_prev_checking[level_indexes[1]])
         {
-            level_2_prev_checking[level_indexes[1]] = 1;
-            level_3_prev_checking[level_indexes[1]][level_indexes[2]] = 1;
-            level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
             paging_levels[1]++;
             paging_levels[2]++;
             paging_levels[3]++;
@@ -552,18 +549,18 @@ void alltablesize(int pid)
         }
         else if(!level_3_prev_checking[level_indexes[1]][level_indexes[2]])
         {
-            level_3_prev_checking[level_indexes[1]][level_indexes[2]] = 1;
-            level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
             paging_levels[2]++;
             paging_levels[3]++;
             num_page_tables += 2;
         }
         else if(!level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]])
         {
-            level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
             paging_levels[3]++;
             num_page_tables++;
         }
+        level_2_prev_checking[level_indexes[1]] = 1;
+        level_3_prev_checking[level_indexes[1]][level_indexes[2]] = 1;
+        level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
     }
 
     fclose(pagemap);
