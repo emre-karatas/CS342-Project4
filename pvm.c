@@ -200,7 +200,7 @@ void memused(int pid)
         free(firstPart);
         free(secondPart);
     }
-    totalPM += PAGESIZE;
+    //totalPM += PAGESIZE;
     printf("(pid=%d) memused: virtual=%ld KB, pmem_all=%ld KB, pmem_alone=%ld KB, mappedonce=%ld KB\n",pid,totalVM/1024,totalPM/1024,exclusivePM/1024,exclusivePM/1024);
 
     // Close the file
@@ -329,7 +329,7 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
     {
         if (!is_va_used(va, maps_file)) 
         {
-            printf("VA 0x%lx: unused\n", va);
+            printf("mapping: vpn=0x%012lx unused\n", va >> 12);
             continue;
         }
 
@@ -344,11 +344,11 @@ void maprange(int pid, uint64_t va1, uint64_t va2)
 
         if ((pagemap_entry & (1ULL << 63)) == 0) 
         {
-            printf("va=0x%012lx: not-in-memory\n", va >> 12);
+            printf("mapping: vpn=0x%012lx not-in-memory\n", va >> 12);
         } 
         else
         {
-            printf("va=0x%012lx pfn=0x%09lx\n", va >> 12, get_entry_frame(pagemap_entry));
+            printf("mapping: vpn=0x%012lx pfn=0x%09lx\n", va >> 12, get_entry_frame(pagemap_entry));
         }
     }
 
