@@ -466,7 +466,57 @@ void mapallin(int pid) {
     close(pagemap);
 }
 
-void alltablesize(int pid)
+void alltablesize(int pid) {
+    char path[64];
+    sprintf(path, "/proc/%d/maps", pid);
+
+    FILE *file = fopen(path, "r");
+    if (file == NULL) 
+    {
+        perror("Could not open file");
+        return;
+    }
+
+    char ****page_table = calloc(ENTRY_COUNT, sizeof(char***));
+    uint64_t paging_levels[4] = {0, 0, 0, 0};
+
+    char line[256];
+    while (fgets(line, sizeof(line), file)) 
+    {
+        uint64_t start, end;
+        sscanf(line, "%lx-%lx", &start, &end);
+        for(uint64_t addr=start; addr<end; addr+=PAGESIZE) 
+        {
+            uint64_t indices[4] = 
+            {
+                (addr >> 39) & 0x1FF,
+                (addr >> 30) & 0x1FF,
+                (addr >> 21) & 0x1FF,
+                (addr >> 12) & 0x1FF
+            };
+            char ****pt1 = page_table;
+            for(int i=0; i<4; i++) 
+            {
+                if(!*pt1) 
+                {
+                    *pt1 = calloc(ENTRY_COUNT, sizeof(void*));
+                    paging_levels[i]++;
+                }
+                pt1 = (char****) &(*pt1)[indices[i]];
+            }
+        }
+    }
+    fclose(file);
+
+    uint64_t pageTableSizeKB = (paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]) * PAGEMAP_ENTRY_SIZE * ENTRY_COUNT / 1024;
+    printf("(pid=%d) total memory occupied by 4-level page table: %lu KB (%lu frames)\n",
+           pid, pageTableSizeKB, paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]);
+
+    printf("(pid=%d) number of page tables used: level1=%lu, level2=%lu, level3=%lu, level4=%lu\n",
+           pid, paging_levels[0], paging_levels[1], paging_levels[2], paging_levels[3]);
+}
+
+/*void alltablesize(int pid)
 {
     int level_of_paging = 4;
     int paging_levels[4] = {1,0,0,0};
@@ -587,7 +637,7 @@ void alltablesize(int pid)
     // Print the number of page tables at each level
     printf("(pid=%d) number of page tables used: level1=%d, level2=%d, level3=%d, level4=%d\n",
            pid, paging_levels[0], paging_levels[1], paging_levels[2], paging_levels[3]);
-}
+}*/
 
 // 20 KB Hesapliyor 100 kb hesaplmasi lazim. pagetableentries yanlis hesapliyo
 /*void alltablesize(int pid)
