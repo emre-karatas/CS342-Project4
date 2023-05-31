@@ -469,7 +469,7 @@ void mapallin(int pid) {
 void alltablesize(int pid)
 {
     int level_of_paging = 4;
-    int paging_levels[4] = {0};
+    int paging_levels[4] = {1,0,0,0};
     char pagemap_file[64];
     char pagemap_line[256];
     FILE* pagemap;
@@ -525,15 +525,46 @@ void alltablesize(int pid)
 
         uint64_t mappingSize = end - start;
         uint64_t numPageTableEntries = mappingSize >> 12;  // Shift by page offset (12 bits)
-        num_page_tables += numPageTableEntries / ENTRY_PER_PAGE;
+        //num_page_tables += numPageTableEntries / ENTRY_PER_PAGE;
+        uint64_t level_indexes[4]; //0 for lvl1, 1 for lvl2, 2 for lvl3 3 for lvl4
+
         for (int i = 0; i < level_of_paging; i++)
         {
+            level_indexes[i] = (start >> ( 12 + 9 * (level_of_paging - 1 - i) )) & 0x1FF;
+            /*
             uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x1FF;
             if (pageTableEntries > 0)
             {
                 paging_levels[i]++;
                 num_page_tables += pageTableEntries;
             }
+            */
+        }
+        if(!level_2_prev_checking[level_indexes[1]])
+        {
+            level_2_prev_checking[level_indexes[1]] = 1;
+            level_3_prev_checking[level_indexes[1]][level_indexes[2]] = 1;
+            level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
+            paging_levels[1]++;
+            paging_levels[2]++;
+            paging_levels[3]++;
+            num_page_tables += 3;
+            continue;
+        }
+        if(!level_3_prev_checking[level_indexes[1]][level_indexes[2]])
+        {
+            level_3_prev_checking[level_indexes[1]][level_indexes[2]] = 1;
+            level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
+            paging_levels[2]++;
+            paging_levels[3]++;
+            num_page_tables += 2;
+            continue;
+        }
+        if(!level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]])
+        {
+            level_4_prev_checking[level_indexes[1]][level_indexes[2]][level_indexes[3]] = 1;
+            paging_levels[3]++;
+            num_page_tables++;
         }
     }
 
