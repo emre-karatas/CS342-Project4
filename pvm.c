@@ -477,7 +477,7 @@ void alltablesize(int pid) {
         return;
     }
 
-    char ****page_table = calloc(ENTRY_COUNT, sizeof(char***));
+    char ****page_table = calloc(ENTRY_PER_PAGE, sizeof(char***));
     uint64_t paging_levels[4] = {0, 0, 0, 0};
 
     char line[256];
@@ -499,7 +499,7 @@ void alltablesize(int pid) {
             {
                 if(!*pt1) 
                 {
-                    *pt1 = calloc(ENTRY_COUNT, sizeof(void*));
+                    *pt1 = calloc(ENTRY_PER_PAGE, sizeof(void*));
                     paging_levels[i]++;
                 }
                 pt1 = (char****) &(*pt1)[indices[i]];
@@ -508,7 +508,7 @@ void alltablesize(int pid) {
     }
     fclose(file);
 
-    uint64_t pageTableSizeKB = (paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]) * PAGEMAP_ENTRY_SIZE * ENTRY_COUNT / 1024;
+    uint64_t pageTableSizeKB = (paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]) * PAGEMAP_ENTRY_SIZE * ENTRY_PER_PAGE / 1024;
     printf("(pid=%d) total memory occupied by 4-level page table: %lu KB (%lu frames)\n",
            pid, pageTableSizeKB, paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]);
 
@@ -580,15 +580,16 @@ void alltablesize(int pid) {
         for (int i = 0; i < level_of_paging; i++)
         {
             level_indexes[i] = (start >> ( 12 + 9 * (level_of_paging - i) )) & 0x1FF;
-            /*
+            
             uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x1FF;
             if (pageTableEntries > 0)
             {
                 paging_levels[i]++;
                 num_page_tables += pageTableEntries;
             }
-            */
+            
         }
+        
         if(!level_2_prev_checking[level_indexes[1]])
         {
             paging_levels[1]++;
