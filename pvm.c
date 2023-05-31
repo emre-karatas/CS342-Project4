@@ -12,7 +12,7 @@
 #define PAGEMAP_LENGTH 8
 #define PAGESIZE 4096
 #define PAGEMAP_ENTRY_SIZE 8
-
+#define ENTRY_PER_PAGE 512
 
 // Function prototypes
 void frameinfo(uint64_t pfn);
@@ -472,11 +472,11 @@ void alltablesize(int pid)
     int         paging_levels[4] = {0};
     char        pagemap_file[64];
     char        pagemap_line[256];
-    FILE*         pagemap;
+    FILE*       pagemap;
     uint64_t    start;
     uint64_t    end;
     char        dummy_permissions[5];
-    uint64_t         num_page_tables;
+    uint64_t    num_page_tables;
     sprintf(pagemap_file, "/proc/%d/maps", pid);
 
     pagemap =   fopen(pagemap_file, "r");
