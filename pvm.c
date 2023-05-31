@@ -476,7 +476,7 @@ void alltablesize(int pid)
     uint64_t start;
     uint64_t end;
     char dummy_permissions[5];
-    uint64_t num_page_tables = 0;
+    uint64_t num_page_tables = 1;
 
     int* level_2_prev_checking;
     int** level_3_prev_checking;
@@ -527,7 +527,7 @@ void alltablesize(int pid)
         uint64_t numPageTableEntries = mappingSize >> 12;  // Shift by page offset (12 bits)
         //num_page_tables += numPageTableEntries / ENTRY_PER_PAGE;
         uint64_t level_indexes[4]; //0 for lvl1, 1 for lvl2, 2 for lvl3 3 for lvl4
-
+        //printf("start:%lx\n", start);
         for (int i = 0; i < level_of_paging; i++)
         {
             level_indexes[i] = (start >> ( 12 + 9 * (level_of_paging - i) )) & 0x1FF;
