@@ -564,6 +564,58 @@ void alltablesize(int pid)
            pid, paging_levels[0], paging_levels[1], paging_levels[2], paging_levels[3]);
 }
 
+// 20 KB Hesapliyor 100 kb hesaplmasi lazim. pagetableentries yanlis hesapliyo
+/*void alltablesize(int pid)
+{
+    int level_of_paging = 4;
+    uint64_t paging_levels[4] = {0};
+    char pagemap_file[64];
+    FILE* pagemap;
+    uint64_t start;
+    uint64_t end;
+    char dummy_permissions[5];
+
+    sprintf(pagemap_file, "/proc/%d/maps", pid);
+
+    pagemap = fopen(pagemap_file, "r");
+    if (pagemap == NULL)
+    {
+        printf("Failed to open pagemap file\n");
+        return;
+    }
+
+    while (fscanf(pagemap, "%lx-%lx %s %*x %*x:%*x %*d\n", &start, &end, dummy_permissions) == 3)
+    {
+        	
+        	uint64_t mappingSize = end - start;
+        	uint64_t numPageTableEntries = mappingSize / PAGESIZE;
+
+        	// Level 1 (PML4)
+        	paging_levels[0] += (numPageTableEntries + ENTRY_PER_PAGE * ENTRY_PER_PAGE * ENTRY_PER_PAGE - 1) / (ENTRY_PER_PAGE * ENTRY_PER_PAGE * ENTRY_PER_PAGE);
+
+        	// Level 2 (PDP)
+        	paging_levels[1] += (numPageTableEntries +( ENTRY_PER_PAGE * ENTRY_PER_PAGE) - 1) / (ENTRY_PER_PAGE * ENTRY_PER_PAGE) ;
+
+        	// Level 3 (PD)
+        	paging_levels[2] += (numPageTableEntries + (ENTRY_PER_PAGE) - 1) / ENTRY_PER_PAGE;
+
+
+        	// Level 4 (PT)
+        	paging_levels[3] += numPageTableEntries-1;
+    }
+
+    fclose(pagemap);
+
+    uint64_t pageTableSizeKB = (paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]) * PAGESIZE / 1024;
+
+    printf("(pid=%d) total memory occupied by 4-level page table: %lu KB (%lu frames)\n",
+           pid, pageTableSizeKB, paging_levels[0] + paging_levels[1] + paging_levels[2] + paging_levels[3]);
+
+    printf("(pid=%d) number of page tables used: level1=%lu, level2=%lu, level3=%lu, level4=%lu\n",
+           pid, paging_levels[0], paging_levels[1], paging_levels[2], paging_levels[3]);
+}
+*/
+
 
 uint64_t pfn_va_formatter(char* arg)
 {
