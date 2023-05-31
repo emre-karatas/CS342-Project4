@@ -468,57 +468,57 @@ void mapallin(int pid) {
 
 void alltablesize(int pid)
 {
-    int         level_of_paging = 4;
-    int         paging_levels[4] = {0};
-    char        pagemap_file[64];
-    char        pagemap_line[256];
-    FILE*       pagemap;
-    uint64_t    start;
-    uint64_t    end;
-    char        dummy_permissions[5];
-    uint64_t    num_page_tables;
+    int level_of_paging = 4;
+    int paging_levels[4] = {0};
+    char pagemap_file[64];
+    char pagemap_line[256];
+    FILE* pagemap;
+    uint64_t start;
+    uint64_t end;
+    char dummy_permissions[5];
+    uint64_t num_page_tables = 0;
     sprintf(pagemap_file, "/proc/%d/maps", pid);
 
-    pagemap =   fopen(pagemap_file, "r");
+    pagemap = fopen(pagemap_file, "r");
     if (pagemap == NULL)
     {
         printf("Failed to open pagemap file\n");
         return;
     }
 
-    while (fgets(pagemap_line, sizeof(pagemap_line), pagemap) != NULL) {
+    while (fgets(pagemap_line, sizeof(pagemap_line), pagemap) != NULL)
+    {
         pagemap_line[strcspn(pagemap_line, "\n")] = '\0';  // Null-terminate the line
         sscanf(pagemap_line, "%lx-%lx %s %*x %*x:%*x %*d", (unsigned long*)&start, (unsigned long*)&end, dummy_permissions);
 
         uint64_t mappingSize = end - start;
         uint64_t numPageTableEntries = mappingSize >> 12;  // Shift by page offset (12 bits)
 
-        for (int i = 0; i < level_of_paging; i++) {
-            uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x0000001FF;
-            if (pageTableEntries > 0) {
+        for (int i = 0; i < level_of_paging; i++)
+        {
+            uint64_t pageTableEntries = (numPageTableEntries >> (9 * (level_of_paging - 1 - i))) & 0x1FF;
+            if (pageTableEntries > 0)
+            {
                 paging_levels[i]++;
-                //num_page_tables++;
                 num_page_tables += pageTableEntries;
             }
         }
     }
 
-
-
     fclose(pagemap);
 
     // Calculate the size in kilobytes
     uint64_t pageTableSizeKB = num_page_tables * PAGESIZE / 1024;
-    
+
     // Print the total page table size
     printf("(pid=%d) total memory occupied by 4-level page table: %lu KB (%lu frames)\n",
            pid, pageTableSizeKB, num_page_tables);
-    
+
     // Print the number of page tables at each level
     printf("(pid=%d) number of page tables used: level1=%d, level2=%d, level3=%d, level4=%d\n",
            pid, paging_levels[0], paging_levels[1], paging_levels[2], paging_levels[3]);
-
 }
+
 
 uint64_t pfn_va_formatter(char* arg)
 {
