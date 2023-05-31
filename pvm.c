@@ -478,7 +478,7 @@ void alltablesize(int pid) {
     }
 
     char ****page_table = calloc(ENTRY_PER_PAGE, sizeof(char***));
-    uint64_t paging_levels[4] = {0, 0, 0, 0};
+    uint64_t paging_levels[4] = {1, 0, 0, 0};
 
     char line[256];
     while (fgets(line, sizeof(line), file)) 
@@ -500,9 +500,11 @@ void alltablesize(int pid) {
                 if(!*pt1) 
                 {
                     *pt1 = calloc(ENTRY_PER_PAGE, sizeof(void*));
+                    if(i)
                     paging_levels[i]++;
                 }
                 pt1 = (char****) &(*pt1)[indices[i]];
+                
             }
         }
     }
